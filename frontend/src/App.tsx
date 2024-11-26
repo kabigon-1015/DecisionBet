@@ -8,6 +8,7 @@ import {
   HandThumbDownIcon,
   InformationCircleIcon,
   CalendarIcon,
+  TrashIcon,
 } from "@heroicons/react/24/solid";
 
 type Task = {
@@ -32,6 +33,17 @@ const App = () => {
       deadline: new Date().toISOString().split("T")[0],
       isDescriptionVisible: false,
       agree: 10,
+      disagree: 0,
+      mentionedUsers: ["you"],
+      creator: "bot",
+    },
+    {
+      task: "GPUサーバのセットアップよろ",
+      description: "@you サーバ室に新しいのが来た",
+      replies: [],
+      deadline: new Date().toISOString().split("T")[0],
+      isDescriptionVisible: false,
+      agree: 30,
       disagree: 0,
       mentionedUsers: ["you"],
       creator: "bot",
@@ -141,6 +153,12 @@ const App = () => {
     setTasks(updatedTasks);
   };
 
+  const trashTask = (index: number) => {
+    const newTasks = tasks.filter((_, i) => i !== index);
+    setTasks(newTasks);
+    setUserCoins(userCoins + tasks[index].agree + tasks[index].disagree);
+  };
+
   return (
     <div className="container mx-auto p-4 bg-gray-100 min-h-screen">
       <header className="bg-white shadow-md p-4 mb-6 fixed top-0 left-0 right-0 z-10">
@@ -235,153 +253,166 @@ const App = () => {
 
       <div className="pt-20 px-4 z-0">
         <ul className="space-y-4">
-          {tasks.map((task, index) => {
-            const totalVotes = task.agree + task.disagree;
-            const agreePercentage =
-              totalVotes > 0 ? (task.agree / totalVotes) * 100 : 0;
+          {tasks.length > 0 ? (
+            tasks.map((task, index) => {
+              const totalVotes = task.agree + task.disagree;
+              const agreePercentage =
+                totalVotes > 0 ? (task.agree / totalVotes) * 100 : 0;
 
-            return (
-              <li
-                key={index}
-                className="card bg-white shadow-lg rounded-lg border border-gray-200 p-4"
-              >
-                <div className="card-body">
-                  <div className="flex items-center text-gray-600 mt-1 text-sm space-x-4">
+              return (
+                <li
+                  key={index}
+                  className="card bg-white shadow-lg rounded-lg border border-gray-200 p-4"
+                >
+                  <div className="card-body">
+                    <div className="flex items-center text-gray-600 mt-1 text-sm space-x-4">
+                      <div className="flex items-center">
+                        <h3 className="card-title text-lg font-semibold text-gray-800">
+                          {task.task}
+                        </h3>
+                        {task.creator === "you" && (
+                          <TrashIcon
+                            className="h-5 w-5 text-red-600 mr-3 ml-auto"
+                            onClick={() => trashTask(index)}
+                          />
+                        )}
+                      </div>
+                    </div>
                     <div className="flex items-center">
-                      <h3 className="card-title text-lg font-semibold text-gray-800">
-                        {task.task}
-                      </h3>
+                      <CalendarIcon className="h-4 w-4 mr-1" />
+                      <span>{task.deadline}</span>
                     </div>
-                  </div>
-                  <div className="flex items-center">
-                    <CalendarIcon className="h-4 w-4 mr-1" />
-                    <span>{task.deadline}</span>
-                  </div>
-                  <div className="flex items-center text-gray-600 mt-2">
-                    <InformationCircleIcon className="h-5 w-5 mr-2" />
-                    <span
-                      style={{
-                        display: "block",
-                        overflow: "hidden",
-                        textOverflow: "ellipsis",
-                        whiteSpace: task.isDescriptionVisible
-                          ? "normal"
-                          : "nowrap",
-                        cursor: "pointer",
-                      }}
-                      onClick={() => toggleDescriptionVisibility(index)}
-                    >
-                      {task.isDescriptionVisible || task.description.length < 50
-                        ? task.description
-                        : `${task.description.slice(0, 50)}...`}
-                    </span>
-                  </div>
-                  <div className="mt-4">
-                    <div className="flex justify-between mb-1">
-                      <span className="text-sm font-medium text-green-500">
-                        アリ ({task.agree})
-                      </span>
-                      <span className="text-sm font-medium text-red-500">
-                        ナシ ({task.disagree})
+                    <div className="flex items-center text-gray-600 mt-2">
+                      <InformationCircleIcon className="h-5 w-5 mr-2" />
+                      <span
+                        style={{
+                          display: "block",
+                          overflow: "hidden",
+                          textOverflow: "ellipsis",
+                          whiteSpace: task.isDescriptionVisible
+                            ? "normal"
+                            : "nowrap",
+                          cursor: "pointer",
+                        }}
+                        onClick={() => toggleDescriptionVisibility(index)}
+                      >
+                        {task.isDescriptionVisible ||
+                        task.description.length < 50
+                          ? task.description
+                          : `${task.description.slice(0, 50)}...`}
                       </span>
                     </div>
-                    <div className="w-full bg-red-200 rounded-full h-2.5 relative">
-                      <div
-                        className="bg-green-600 h-2.5 rounded-l-full absolute left-0 top-0"
-                        style={{ width: `${agreePercentage}%` }}
-                      ></div>
+                    <div className="mt-4">
+                      <div className="flex justify-between mb-1">
+                        <span className="text-sm font-medium text-green-500">
+                          アリ ({task.agree})
+                        </span>
+                        <span className="text-sm font-medium text-red-500">
+                          ナシ ({task.disagree})
+                        </span>
+                      </div>
+                      <div className="w-full bg-red-200 rounded-full h-2.5 relative">
+                        <div
+                          className="bg-green-600 h-2.5 rounded-l-full absolute left-0 top-0"
+                          style={{ width: `${agreePercentage}%` }}
+                        ></div>
+                      </div>
                     </div>
-                  </div>
-                  <div className="flex items-center mt-2 space-x-2">
-                    <button
-                      onClick={() => judgeTask(index, "agree")}
-                      className="flex items-center justify-center text-xs px-3 py-1 bg-green-100 text-green-800 rounded-full hover:bg-green-200"
-                    >
-                      <HandThumbUpIcon className="h-4 w-4 mr-1" /> アリ
-                    </button>
+                    <div className="flex items-center mt-2 space-x-2">
+                      <button
+                        onClick={() => judgeTask(index, "agree")}
+                        className="flex items-center justify-center text-xs px-3 py-1 bg-green-100 text-green-800 rounded-full hover:bg-green-200"
+                      >
+                        <HandThumbUpIcon className="h-4 w-4 mr-1" /> アリ
+                      </button>
 
-                    <button
-                      onClick={() => judgeTask(index, "disagree")}
-                      className="flex items-center justify-center text-xs px-3 py-1 bg-red-100 text-red-800 rounded-full hover:bg-red-200"
-                    >
-                      <HandThumbDownIcon className="h-4 w-4 mr-1" /> ナシ
-                    </button>
+                      <button
+                        onClick={() => judgeTask(index, "disagree")}
+                        className="flex items-center justify-center text-xs px-3 py-1 bg-red-100 text-red-800 rounded-full hover:bg-red-200"
+                      >
+                        <HandThumbDownIcon className="h-4 w-4 mr-1" /> ナシ
+                      </button>
 
-                    {isBetDialogOpen && (
-                      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-30">
-                        <div className="bg-white p-6 rounded-lg w-full max-w-md">
-                          <h2 className="text-2xl font-bold mb-4">
-                            Bet数の決定
-                          </h2>
-                          <div className="flex items-center mb-4">
+                      {isBetDialogOpen && (
+                        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-30">
+                          <div className="bg-white p-6 rounded-lg w-full max-w-md">
+                            <h2 className="text-2xl font-bold mb-4">
+                              Bet数の決定
+                            </h2>
+                            <div className="flex items-center mb-4">
+                              <input
+                                type="number"
+                                placeholder="Betする通貨"
+                                value={betAmount}
+                                onChange={(e) =>
+                                  setBetAmount(Number(e.target.value))
+                                }
+                                className="input input-bordered w-full border-blue-300 focus:border-blue-500 focus:ring focus:ring-blue-200"
+                              />
+                            </div>
                             <input
-                              type="number"
-                              placeholder="Betする通貨"
+                              type="range"
+                              min={0}
+                              max={userCoins}
                               value={betAmount}
                               onChange={(e) =>
                                 setBetAmount(Number(e.target.value))
                               }
-                              className="input input-bordered w-full border-blue-300 focus:border-blue-500 focus:ring focus:ring-blue-200"
+                              className="w-full mb-4"
                             />
-                          </div>
-                          <input
-                            type="range"
-                            min={0}
-                            max={userCoins}
-                            value={betAmount}
-                            onChange={(e) =>
-                              setBetAmount(Number(e.target.value))
-                            }
-                            className="w-full mb-4"
-                          />
-                          <div className="flex justify-end space-x-2">
-                            <button
-                              onClick={() => setIsBetDialogOpen(false)}
-                              className="btn btn-outline"
-                            >
-                              キャンセル
-                            </button>
-                            <button
-                              onClick={() =>
-                                handleBet(index, "disagree", betAmount)
-                              }
-                              className="btn btn-primary"
-                            >
-                              Bet!
-                            </button>
+                            <div className="flex justify-end space-x-2">
+                              <button
+                                onClick={() => setIsBetDialogOpen(false)}
+                                className="btn btn-outline"
+                              >
+                                キャンセル
+                              </button>
+                              <button
+                                onClick={() =>
+                                  handleBet(index, "disagree", betAmount)
+                                }
+                                className="btn btn-primary"
+                              >
+                                Bet!
+                              </button>
+                            </div>
                           </div>
                         </div>
-                      </div>
-                    )}
-                  </div>
+                      )}
+                    </div>
 
-                  <div className="mt-2">
-                    <input
-                      type="text"
-                      placeholder="返信を入力"
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter") {
-                          const target = e.target as HTMLInputElement;
-                          addReply(index, target.value);
-                          target.value = "";
-                        }
-                      }}
-                      className="input input-bordered w-full"
-                    />
-                    {task.replies.length > 0 && (
-                      <ul className="menu bg-base-200 w-full rounded-box mt-2">
-                        {task.replies.map((reply, rIndex) => (
-                          <li key={rIndex}>
-                            <a>{reply}</a>
-                          </li>
-                        ))}
-                      </ul>
-                    )}
+                    <div className="mt-2">
+                      <input
+                        type="text"
+                        placeholder="返信を入力"
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") {
+                            const target = e.target as HTMLInputElement;
+                            addReply(index, target.value);
+                            target.value = "";
+                          }
+                        }}
+                        className="input input-bordered w-full input-xs"
+                      />
+                      {task.replies.length > 0 && (
+                        <ul className="menu bg-base-200 w-full rounded-box mt-2">
+                          {task.replies.map((reply, rIndex) => (
+                            <li key={rIndex}>
+                              <a>{reply}</a>
+                            </li>
+                          ))}
+                        </ul>
+                      )}
+                    </div>
                   </div>
-                </div>
-              </li>
-            );
-          })}
+                </li>
+              );
+            })
+          ) : (
+            <span className="text-xl font-bold mb-4 text-center">
+              決めたいことはありません
+            </span>
+          )}
         </ul>
       </div>
     </div>
