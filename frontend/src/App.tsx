@@ -4,15 +4,21 @@ import {
   PlusIcon,
   UserIcon,
   CurrencyDollarIcon,
+  HandThumbUpIcon,
+  HandThumbDownIcon,
+  InformationCircleIcon,
+  CalendarIcon,
 } from "@heroicons/react/24/solid";
 
 type Task = {
   task: string;
-  bet: number;
   description: string;
   replies: string[];
   deadline: string;
+  agree: number;
+  disagree: number;
 };
+
 const App = () => {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [isDialogOpen, setIsDialogOpen] = useState<boolean>(false);
@@ -29,13 +35,15 @@ const App = () => {
         ...tasks,
         {
           task: newTask,
-          bet: betAmount,
           description,
           replies: [],
           deadline: new Date().toISOString().split("T")[0],
+          agree: betAmount,
+          disagree: 0,
         },
       ]);
       setNewTask("");
+      setUserCoins(userCoins - betAmount);
       setBetAmount(0);
       setDescription("");
       setIsDialogOpen(false);
@@ -45,6 +53,18 @@ const App = () => {
   const addReply = (index: number, reply: string) => {
     const updatedTasks = [...tasks];
     updatedTasks[index].replies.push(reply);
+    setTasks(updatedTasks);
+  };
+
+  const handleBet = (index: number, type: string) => {
+    const updatedTasks = [...tasks];
+    if (type === "agree") {
+      updatedTasks[index].agree += 1;
+      setUserCoins(userCoins - 1);
+    } else {
+      updatedTasks[index].disagree += 1;
+      setUserCoins(userCoins - 1);
+    }
     setTasks(updatedTasks);
   };
 
@@ -67,7 +87,7 @@ const App = () => {
       </header>
       <button
         onClick={() => setIsDialogOpen(true)}
-        className="fixed bottom-4 right-4 bg-blue-500 text-white rounded-full p-3 shadow-lg hover:bg-blue-600"
+        className="fixed bottom-4 right-4 bg-blue-500 text-white rounded-full p-3 shadow-lg hover:bg-blue-600 z-50"
       >
         <PlusIcon className="h-6 w-6" />
       </button>
@@ -91,12 +111,6 @@ const App = () => {
                 onChange={(e) => setBetAmount(Number(e.target.value))}
                 className="input input-bordered w-full border-blue-300 focus:border-blue-500 focus:ring focus:ring-blue-200"
               />
-              <button
-                onClick={() => setBetAmount(betAmount + 10)}
-                className="ml-2 btn btn-secondary"
-              >
-                +10
-              </button>
             </div>
             <input
               type="range"
@@ -132,44 +146,91 @@ const App = () => {
           </div>
         </div>
       )}
-      <div className="pt-20 px-4">
+      <div className="pt-20 px-4 z-0">
         <ul className="space-y-4">
-          {tasks.map((task, index) => (
-            <li
-              key={index}
-              className="card bg-white shadow-lg rounded-lg border border-gray-200 p-4"
-            >
-              <div className="card-body">
-                <h3 className="card-title text-lg font-semibold text-gray-800">
-                  {task.task}
-                </h3>
-                <p className="text-gray-600">Bet: {task.bet} 通貨</p>
-                <p className="text-gray-600">説明: {task.description}</p>
-                <p className="text-gray-600">期限: {task.deadline}</p>
-                <div className="mt-2">
-                  <input
-                    type="text"
-                    placeholder="返信を入力"
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter") {
-                        const target = e.target as HTMLInputElement;
-                        addReply(index, target.value);
-                        target.value = "";
-                      }
-                    }}
-                    className="input input-bordered w-full"
-                  />
-                  <ul className="menu bg-base-200 w-full rounded-box mt-2">
-                    {task.replies.map((reply, rIndex) => (
-                      <li key={rIndex}>
-                        <a>{reply}</a>
-                      </li>
-                    ))}
-                  </ul>
+          {tasks.map((task, index) => {
+            const totalVotes = task.agree + task.disagree;
+            const agreePercentage =
+              totalVotes > 0 ? (task.agree / totalVotes) * 100 : 0;
+
+            return (
+              <li
+                key={index}
+                className="card bg-white shadow-lg rounded-lg border border-gray-200 p-4"
+              >
+                <div className="card-body">
+                  <div className="flex items-center text-gray-600 mt-1 text-sm space-x-4">
+                    <div className="flex items-center">
+                      <h3 className="card-title text-lg font-semibold text-gray-800">
+                        {task.task}
+                      </h3>
+                    </div>
+                    <div className="flex items-center">
+                      <CalendarIcon className="h-4 w-4 mr-1" />
+                      <span>{task.deadline}</span>
+                    </div>
+                  </div>
+                  <div className="flex items-center text-gray-600 mt-2">
+                    <InformationCircleIcon className="h-5 w-5 mr-2" />
+                    <span>{task.description}</span>
+                  </div>
+                  <div className="mt-4">
+                    <div className="flex justify-between mb-1">
+                      <span className="text-sm font-medium text-green-700">
+                        アリ ({task.agree})
+                      </span>
+                      <span className="text-sm font-medium text-red-700">
+                        ナシ ({task.disagree})
+                      </span>
+                    </div>
+                    <div className="w-full bg-red-200 rounded-full h-2.5 relative">
+                      <div
+                        className="bg-green-600 h-2.5 rounded-l-full absolute left-0 top-0"
+                        style={{ width: `${agreePercentage}%` }}
+                      ></div>
+                    </div>
+                  </div>
+                  <div className="flex items-center mt-2 space-x-2">
+                    <button
+                      onClick={() => handleBet(index, "agree")}
+                      className="flex items-center justify-center px-4 py-2 bg-green-100 text-green-800 rounded-full hover:bg-green-200"
+                    >
+                      <HandThumbUpIcon className="h-5 w-5 mr-1" /> アリ
+                    </button>
+                    <button
+                      onClick={() => handleBet(index, "disagree")}
+                      className="flex items-center justify-center px-4 py-2 bg-red-100 text-red-800 rounded-full hover:bg-red-200"
+                    >
+                      <HandThumbDownIcon className="h-5 w-5 mr-1" /> ナシ
+                    </button>
+                  </div>
+                  {/* 返信入力フィールド */}
+                  <div className="mt-2">
+                    <input
+                      type="text"
+                      placeholder="返信を入力"
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") {
+                          const target = e.target as HTMLInputElement;
+                          addReply(index, target.value);
+                          target.value = "";
+                        }
+                      }}
+                      className="input input-bordered w-full"
+                    />
+                    {/* 返信リスト */}
+                    <ul className="menu bg-base-200 w-full rounded-box mt-2">
+                      {task.replies.map((reply, rIndex) => (
+                        <li key={rIndex}>
+                          <a>{reply}</a>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
                 </div>
-              </div>
-            </li>
-          ))}
+              </li>
+            );
+          })}
         </ul>
       </div>
     </div>
