@@ -13,59 +13,131 @@ import {
 type Task = {
   task: string;
   description: string;
+  isDescriptionVisible: boolean;
   replies: string[];
   deadline: string;
   agree: number;
   disagree: number;
+  mentionedUsers: string[];
+  creator: string;
 };
+const users = ["bot", "you"];
 
 const App = () => {
-  const [tasks, setTasks] = useState<Task[]>([]);
+  const [tasks, setTasks] = useState<Task[]>([
+    {
+      task: "家にクリスマスツリーがほしい",
+      description: "@you 飾り付け楽しい",
+      replies: [],
+      deadline: new Date().toISOString().split("T")[0],
+      isDescriptionVisible: false,
+      agree: 10,
+      disagree: 0,
+      mentionedUsers: ["you"],
+      creator: "bot",
+    },
+  ]);
   const [isDialogOpen, setIsDialogOpen] = useState<boolean>(false);
   const [newTask, setNewTask] = useState<string>("");
   const [betAmount, setBetAmount] = useState<number>(0);
-  const [description, setDescription] = useState<string>("");
-  const [userName, setUserName] = useState("kabigon");
+  const [mentionedUsers, setMentionedUsers] = useState<string[]>([]);
+  const [addUsers, setAddUsers] = useState<string[]>([]);
+  const [inputText, setInputText] = useState("");
+  const [userName, setUserName] = useState("you");
   const [userCoins, setUserCoins] = useState(100);
   const [deadline, setDeadline] = useState("");
+  const [isBetDialogOpen, setIsBetDialogOpen] = useState<boolean>(false);
 
   const addTask = () => {
-    setUserName("kabigon");
+    setUserName("you");
     if (newTask && betAmount > 0) {
       setTasks([
         ...tasks,
         {
           task: newTask,
-          description,
+          description: inputText,
           replies: [],
           deadline: new Date().toISOString().split("T")[0],
+          isDescriptionVisible: false,
           agree: betAmount,
           disagree: 0,
+          mentionedUsers: addUsers,
+          creator: "you",
         },
       ]);
       setNewTask("");
       setUserCoins(userCoins - betAmount);
       setBetAmount(0);
-      setDescription("");
+      setInputText("");
+      setAddUsers([]);
+      setMentionedUsers([]);
       setIsDialogOpen(false);
+      console.log("タスク:", newTask);
+      console.log("メンション:", addUsers);
     }
   };
 
   const addReply = (index: number, reply: string) => {
     const updatedTasks = [...tasks];
-    updatedTasks[index].replies.push(reply);
+    updatedTasks[index].replies.push(`you:${reply}`);
     setTasks(updatedTasks);
   };
 
-  const handleBet = (index: number, type: string) => {
+  const handleInputChange = (
+    e: React.ChangeEvent<HTMLTextAreaElement | HTMLInputElement>
+  ) => {
+    const value = e.target.value;
+    setInputText(value);
+    if (value.includes("@")) {
+      const mentionPart = value.split("@")[1];
+      const filteredUsers = users.filter((user) =>
+        user.toLowerCase().includes(mentionPart.toLowerCase())
+      );
+      setMentionedUsers(filteredUsers);
+    } else {
+      setMentionedUsers([]);
+    }
+  };
+
+  const handleBet = (index: number, type: string, betAmount: number) => {
     const updatedTasks = [...tasks];
     if (type === "agree") {
-      updatedTasks[index].agree += 1;
-      setUserCoins(userCoins - 1);
+      updatedTasks[index].agree += betAmount;
+      setUserCoins(userCoins - betAmount);
     } else {
-      updatedTasks[index].disagree += 1;
-      setUserCoins(userCoins - 1);
+      updatedTasks[index].disagree += betAmount;
+      setUserCoins(userCoins - betAmount);
     }
+    setTasks(updatedTasks);
+    setIsBetDialogOpen(false);
+  };
+
+  const judgeTask = (index: number, type: string) => {
+    if (tasks[index].creator === "bot" && type === "agree") {
+      const newTasks = tasks.filter((_, i) => i !== index);
+      setTasks(newTasks);
+      setUserCoins(userCoins + tasks[index].agree + tasks[index].disagree);
+    } else {
+      setIsBetDialogOpen(true);
+    }
+  };
+
+  const handleUserSelect = (user: string) => {
+    const newText = inputText.replace(/@\w*$/, `@${user} `);
+    setInputText(newText);
+    if (!mentionedUsers.includes(user)) {
+      setMentionedUsers((prev) => [...prev, user]);
+    }
+    const pendingUsers = [...addUsers, user];
+    setAddUsers(pendingUsers);
+    console.log(pendingUsers);
+    setMentionedUsers([]);
+  };
+
+  const toggleDescriptionVisibility = (index: number) => {
+    const updatedTasks = [...tasks];
+    updatedTasks[index].isDescriptionVisible =
+      !updatedTasks[index].isDescriptionVisible; // 表示状態を切り替え
     setTasks(updatedTasks);
   };
 
@@ -122,11 +194,24 @@ const App = () => {
               className="w-full mb-4"
             />
             <textarea
-              placeholder="補足説明"
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
+              placeholder="補足説明（@でユーザーをメンション）"
+              value={inputText}
+              onChange={handleInputChange}
               className="textarea textarea-bordered w-full mb-4 border-blue-300 focus:border-blue-500 focus:ring focus:ring-blue-200"
             />
+            {mentionedUsers.length > 0 && (
+              <ul className="bg-white border border-gray-300 rounded-md mt-2">
+                {mentionedUsers.map((user, index) => (
+                  <li
+                    key={index}
+                    onClick={() => handleUserSelect(user)}
+                    className="p-2 hover:bg-gray-200 cursor-pointer"
+                  >
+                    {user}
+                  </li>
+                ))}
+              </ul>
+            )}
             <input
               type="date"
               value={deadline}
@@ -147,6 +232,7 @@ const App = () => {
           </div>
         </div>
       )}
+
       <div className="pt-20 px-4 z-0">
         <ul className="space-y-4">
           {tasks.map((task, index) => {
@@ -166,21 +252,36 @@ const App = () => {
                         {task.task}
                       </h3>
                     </div>
-                    <div className="flex items-center">
-                      <CalendarIcon className="h-4 w-4 mr-1" />
-                      <span>{task.deadline}</span>
-                    </div>
+                  </div>
+                  <div className="flex items-center">
+                    <CalendarIcon className="h-4 w-4 mr-1" />
+                    <span>{task.deadline}</span>
                   </div>
                   <div className="flex items-center text-gray-600 mt-2">
                     <InformationCircleIcon className="h-5 w-5 mr-2" />
-                    <span>{task.description}</span>
+                    <span
+                      style={{
+                        display: "block",
+                        overflow: "hidden",
+                        textOverflow: "ellipsis",
+                        whiteSpace: task.isDescriptionVisible
+                          ? "normal"
+                          : "nowrap",
+                        cursor: "pointer",
+                      }}
+                      onClick={() => toggleDescriptionVisibility(index)}
+                    >
+                      {task.isDescriptionVisible || task.description.length < 50
+                        ? task.description
+                        : `${task.description.slice(0, 50)}...`}
+                    </span>
                   </div>
                   <div className="mt-4">
                     <div className="flex justify-between mb-1">
-                      <span className="text-sm font-medium text-green-700">
+                      <span className="text-sm font-medium text-green-500">
                         アリ ({task.agree})
                       </span>
-                      <span className="text-sm font-medium text-red-700">
+                      <span className="text-sm font-medium text-red-500">
                         ナシ ({task.disagree})
                       </span>
                     </div>
@@ -193,19 +294,67 @@ const App = () => {
                   </div>
                   <div className="flex items-center mt-2 space-x-2">
                     <button
-                      onClick={() => handleBet(index, "agree")}
-                      className="flex items-center justify-center px-4 py-2 bg-green-100 text-green-800 rounded-full hover:bg-green-200"
+                      onClick={() => judgeTask(index, "agree")}
+                      className="flex items-center justify-center text-xs px-3 py-1 bg-green-100 text-green-800 rounded-full hover:bg-green-200"
                     >
-                      <HandThumbUpIcon className="h-5 w-5 mr-1" /> アリ
+                      <HandThumbUpIcon className="h-4 w-4 mr-1" /> アリ
                     </button>
+
                     <button
-                      onClick={() => handleBet(index, "disagree")}
-                      className="flex items-center justify-center px-4 py-2 bg-red-100 text-red-800 rounded-full hover:bg-red-200"
+                      onClick={() => judgeTask(index, "disagree")}
+                      className="flex items-center justify-center text-xs px-3 py-1 bg-red-100 text-red-800 rounded-full hover:bg-red-200"
                     >
-                      <HandThumbDownIcon className="h-5 w-5 mr-1" /> ナシ
+                      <HandThumbDownIcon className="h-4 w-4 mr-1" /> ナシ
                     </button>
+
+                    {isBetDialogOpen && (
+                      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-30">
+                        <div className="bg-white p-6 rounded-lg w-full max-w-md">
+                          <h2 className="text-2xl font-bold mb-4">
+                            Bet数の決定
+                          </h2>
+                          <div className="flex items-center mb-4">
+                            <input
+                              type="number"
+                              placeholder="Betする通貨"
+                              value={betAmount}
+                              onChange={(e) =>
+                                setBetAmount(Number(e.target.value))
+                              }
+                              className="input input-bordered w-full border-blue-300 focus:border-blue-500 focus:ring focus:ring-blue-200"
+                            />
+                          </div>
+                          <input
+                            type="range"
+                            min={0}
+                            max={userCoins}
+                            value={betAmount}
+                            onChange={(e) =>
+                              setBetAmount(Number(e.target.value))
+                            }
+                            className="w-full mb-4"
+                          />
+                          <div className="flex justify-end space-x-2">
+                            <button
+                              onClick={() => setIsBetDialogOpen(false)}
+                              className="btn btn-outline"
+                            >
+                              キャンセル
+                            </button>
+                            <button
+                              onClick={() =>
+                                handleBet(index, "disagree", betAmount)
+                              }
+                              className="btn btn-primary"
+                            >
+                              Bet!
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    )}
                   </div>
-                  {/* 返信入力フィールド */}
+
                   <div className="mt-2">
                     <input
                       type="text"
@@ -219,14 +368,15 @@ const App = () => {
                       }}
                       className="input input-bordered w-full"
                     />
-                    {/* 返信リスト */}
-                    <ul className="menu bg-base-200 w-full rounded-box mt-2">
-                      {task.replies.map((reply, rIndex) => (
-                        <li key={rIndex}>
-                          <a>{reply}</a>
-                        </li>
-                      ))}
-                    </ul>
+                    {task.replies.length > 0 && (
+                      <ul className="menu bg-base-200 w-full rounded-box mt-2">
+                        {task.replies.map((reply, rIndex) => (
+                          <li key={rIndex}>
+                            <a>{reply}</a>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
                   </div>
                 </div>
               </li>
