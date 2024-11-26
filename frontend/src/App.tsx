@@ -28,6 +28,7 @@ const App = () => {
   const [userName, setUserName] = useState("kabigon");
   const [userCoins, setUserCoins] = useState(100);
   const [deadline, setDeadline] = useState("");
+  setUserName("kabigon");
 
   const addTask = () => {
     if (newTask && betAmount > 0) {
