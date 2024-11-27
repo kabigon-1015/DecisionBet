@@ -27,7 +27,7 @@ const users = ["bot", "you"];
 const App = () => {
   const [tasks, setTasks] = useState<Task[]>([
     {
-      task: "家にクリスマスツリーがほしい",
+      task: "布団乾燥機は必須",
       description: "@you 飾り付け楽しい",
       replies: [],
       deadline: new Date().toISOString().split("T")[0],
@@ -38,7 +38,7 @@ const App = () => {
       creator: "bot",
     },
     {
-      task: "GPUサーバのセットアップよろ",
+      task: "GPUサーバのセットアップ",
       description: "@you サーバ室に新しいのが来た",
       replies: [],
       deadline: new Date().toISOString().split("T")[0],
