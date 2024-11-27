@@ -59,6 +59,7 @@ const App = () => {
   const [userCoins, setUserCoins] = useState(100);
   const [deadline, setDeadline] = useState("");
   const [isBetDialogOpen, setIsBetDialogOpen] = useState<boolean>(false);
+  const [betType, setBetType] = useState<string>("agree");
 
   const addTask = () => {
     setUserName("you");
@@ -129,8 +130,15 @@ const App = () => {
       const newTasks = tasks.filter((_, i) => i !== index);
       setTasks(newTasks);
       setUserCoins(userCoins + tasks[index].agree + tasks[index].disagree);
+      setBetType("agree");
     } else {
-      setIsBetDialogOpen(true);
+      if (type === "agree") {
+        setBetType("agree");
+        setIsBetDialogOpen(true);
+      } else {
+        setBetType("disagree");
+        setIsBetDialogOpen(true);
+      }
     }
   };
 
@@ -369,7 +377,7 @@ const App = () => {
                               </button>
                               <button
                                 onClick={() =>
-                                  handleBet(index, "disagree", betAmount)
+                                  handleBet(index, betType, betAmount)
                                 }
                                 className="btn btn-primary"
                               >
