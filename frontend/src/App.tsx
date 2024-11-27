@@ -28,7 +28,7 @@ const App = () => {
   const [tasks, setTasks] = useState<Task[]>([
     {
       task: "布団乾燥機は必須",
-      description: "@you 飾り付け楽しい",
+      description: "@you 布団が乾くから",
       replies: [],
       deadline: new Date().toISOString().split("T")[0],
       isDescriptionVisible: false,
