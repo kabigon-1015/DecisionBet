@@ -60,6 +60,7 @@ const App = () => {
   const [deadline, setDeadline] = useState("");
   const [isBetDialogOpen, setIsBetDialogOpen] = useState<boolean>(false);
   const [betType, setBetType] = useState<string>("agree");
+  const [betInd, setBetInd] = useState<number>(0);
 
   const addTask = () => {
     setUserName("you");
@@ -134,9 +135,11 @@ const App = () => {
     } else {
       if (type === "agree") {
         setBetType("agree");
+        setBetInd(index);
         setIsBetDialogOpen(true);
       } else {
         setBetType("disagree");
+        setBetInd(index);
         setIsBetDialogOpen(true);
       }
     }
@@ -345,7 +348,7 @@ const App = () => {
                         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-30">
                           <div className="bg-white p-6 rounded-lg w-full max-w-md">
                             <h2 className="text-2xl font-bold mb-4">
-                              Bet数の決定
+                              Bet数の決定{betInd}
                             </h2>
                             <div className="flex items-center mb-4">
                               <input
@@ -377,7 +380,7 @@ const App = () => {
                               </button>
                               <button
                                 onClick={() =>
-                                  handleBet(index, betType, betAmount)
+                                  handleBet(betInd, betType, betAmount)
                                 }
                                 className="btn btn-primary"
                               >
