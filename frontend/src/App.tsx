@@ -348,7 +348,7 @@ const App = () => {
                         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-30">
                           <div className="bg-white p-6 rounded-lg w-full max-w-md">
                             <h2 className="text-2xl font-bold mb-4">
-                              Bet数の決定{betInd}
+                              Bet数の決定
                             </h2>
                             <div className="flex items-center mb-4">
                               <input
